@@ -1,22 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 
 [RequireComponent(typeof(SpriteRenderer))]
 public class OrderInLayer : MonoBehaviour
 {
-    
-    SpriteRenderer sr;
+    private SpriteRenderer sr;
 
     void Start()
     {
         sr = GetComponent<SpriteRenderer>();
     }
 
-    
-    void Update()
+    void LateUpdate()
     {
-        sr.sortingOrder = -(int)(transform.position.y * 100);
+        sr.sortingOrder = Mathf.RoundToInt(-transform.position.y * 100);
     }
 }

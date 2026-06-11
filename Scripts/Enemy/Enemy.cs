@@ -11,6 +11,7 @@ public class Enemy : Fighter
     // ESTA ATACANDO ACTUALMENTE
     // =========================
     static bool enemigoAtacando = false;
+    bool estaMuerto = false;
 
     // =========================
     // ESTADOS DEL ENEMIGO
@@ -137,6 +138,16 @@ public class Enemy : Fighter
     ParticleSystem dashParticles;
 
     // =========================
+    // PROYECTIL
+    // =========================
+
+    [SerializeField]
+    GameObject projectilePrefab;
+
+    [SerializeField]
+    Transform firePoint;
+
+    // =========================
     // VIDA DEL ENEMIGO
     // =========================
 
@@ -146,7 +157,9 @@ public class Enemy : Fighter
     private float vida;
 
     [SerializeField]
-    private Image barraVida;
+    private RectTransform barraVida;
+
+    private float anchoOriginalBarra;
 
     // =========================
 
@@ -156,10 +169,23 @@ public class Enemy : Fighter
 
     Vector2 vel;
 
+    // =========================
+    // DETECCION DEL JUGADOR
+    // =========================
+
+    [SerializeField]
+    float rangoDeteccion = 10f;
+
+    [SerializeField]
+    float tiempoPerdidaObjetivo = 2f;
+
+    float temporizadorPerdida = 0f;
+
     void Start()
     {
         // inicializa vida
         vida = vidaMaxima;
+        anchoOriginalBarra = barraVida.sizeDelta.x;
 
         // actualiza barra
         ActualizarBarraVida();
@@ -197,6 +223,21 @@ public class Enemy : Fighter
         }
 
         // evita ataques dobles
+        if (estaMuerto)
+        {
+            return;
+        }
+
+        if (state == States.retreat)
+        {
+            return;
+        }
+
+        if (rb.linearVelocity.magnitude > 0.1f)
+        {
+            return;
+        }
+
         if (estaAtacando)
         {
             return;
@@ -219,10 +260,14 @@ public class Enemy : Fighter
             );
 
         // demasiado lejos
-        if (distanciaJugador > stoppingDistance + 0.5f)
-        {
-            return;
-        }
+        //if (distanciaJugador > stoppingDistance + 0.5f)
+        //{
+        //    return;
+        //}
+            if (distanciaJugador > 8f)
+            {
+                return;
+            }
 
         // =========================
         // INICIA ATAQUE
@@ -240,8 +285,8 @@ public class Enemy : Fighter
         // desactiva caminar
         anim.SetBool("isWalking", false);
 
-        // activa animacion
-        anim.SetTrigger("SetAttack");
+        // dispara proyectil
+        DispararProyectil();
 
         StartCoroutine(EsperarRetroceso());
     }
@@ -291,6 +336,12 @@ public class Enemy : Fighter
             transform.position,
             transform.right * distanciaDeteccion
         );
+        Gizmos.color = Color.magenta;
+
+        Gizmos.DrawWireSphere(
+            transform.position,
+            rangoDeteccion
+        );
     }
 
     void SetTarget()
@@ -307,6 +358,48 @@ public class Enemy : Fighter
 
     void Update()
     {
+
+        if (estaMuerto)
+            {
+                rb.linearVelocity = Vector2.zero;
+
+                anim.SetBool("isWalking", false);
+
+                return;
+            }
+        // =========================
+        // DETECCION JUGADOR
+        // =========================
+
+        if(player != null)
+        {
+            float distanciaJugador =
+                Vector2.Distance(
+                    transform.position,
+                    player.position
+                );
+
+            // entra en persecucion
+            if(distanciaJugador <= rangoDeteccion)
+            {
+                state = States.pursuit;
+                temporizadorPerdida = 0f;
+            }
+            // sale del rango
+            else if(state == States.pursuit)
+            {
+                temporizadorPerdida += Time.deltaTime;
+
+                if(temporizadorPerdida >= tiempoPerdidaObjetivo)
+                {
+                    state = States.patrol;
+
+                    temporizadorPerdida = 0f;
+
+                    SetTarget();
+                }
+            }
+        }
         // =========================
         // SI RETROCEDE
         // =========================
@@ -412,41 +505,6 @@ public class Enemy : Fighter
 
                     target = posicionEscudo;
                 }
-            }
-
-            // pierde jugador
-            if (Vector3.Distance(
-                player.position,
-                transform.position)
-                > searchRange * 1.2f)
-            {
-                target = transform.position;
-
-                state = States.patrol;
-
-                return;
-            }
-        }
-
-        // =========================
-        // PATRULLA
-        // =========================
-        else if (state == States.patrol)
-        {
-            // busca colliders alrededor
-            Collider2D jugadorDetectado =
-                Physics2D.OverlapCircle(
-                    transform.position,
-                    searchRange,
-                    LayerMask.GetMask("Player")
-                );
-
-            // si encuentra jugador
-            if (jugadorDetectado != null)
-            {
-                state = States.pursuit;
-
-                return;
             }
         }
 
@@ -691,25 +749,81 @@ public class Enemy : Fighter
     }
 
     // =========================
+    // DISPARAR PROYECTIL
+    // =========================
+    void DispararProyectil()
+    {
+        if (player == null)
+            return;
+
+        if (projectilePrefab == null)
+            return;
+
+        if (firePoint == null)
+            return;
+
+        GameObject proyectil =
+            Instantiate(
+                projectilePrefab,
+                firePoint.position,
+                Quaternion.identity
+            );
+
+        EnemyProjectile enemyProjectile =
+            proyectil.GetComponent<EnemyProjectile>();
+
+        if(enemyProjectile != null)
+        {
+            Vector2 direccion =
+                (player.position - firePoint.position).normalized;
+
+            enemyProjectile.SetDirection(direccion);
+        }
+    }
+
+    // =========================
     // ACTUALIZA VIDA
     // =========================
-    void ActualizarBarraVida()
-    {
-        barraVida.fillAmount = vida / vidaMaxima;
-    }
+   void ActualizarBarraVida()
+{
+    float porcentaje = vida / vidaMaxima;
+
+    Vector2 nuevoTamano = barraVida.sizeDelta;
+
+    nuevoTamano.x = anchoOriginalBarra * porcentaje;
+
+    barraVida.sizeDelta = nuevoTamano;
+}
 
     // =========================
     // RECIBIR DAÑO
     // =========================
     public void TomarDano(float dano)
     {
+        if (estaMuerto)
+            return;
+
         vida -= dano;
 
         ActualizarBarraVida();
 
         if (vida <= 0)
         {
+            estaMuerto = true;
+
             enemigoAtacando = false;
+
+            CancelInvoke();
+
+            StopAllCoroutines();
+
+            state = States.patrol;
+
+            rb.linearVelocity = Vector2.zero;
+
+            vel = Vector2.zero;
+
+            anim.SetBool("isWalking", false);
 
             anim.SetTrigger("Death");
 

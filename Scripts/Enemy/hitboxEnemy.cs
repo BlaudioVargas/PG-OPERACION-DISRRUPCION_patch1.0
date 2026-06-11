@@ -4,22 +4,19 @@ using UnityEngine;
 
 public class hitboxEnemy : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-     private void OnCollisionEnter2D(Collision2D other) // se designa el daño recibido al ser atacado
-    {
-        if(other.gameObject.CompareTag("Player"))
+        if (other.CompareTag("Player"))
         {
-            other.gameObject.GetComponent<playerMovement>().TomarDano(20);
+            playerMovement player =
+                other.GetComponentInParent<playerMovement>();
+
+            if (player != null)
+            {
+                player.TomarDano(20);
+
+                Debug.Log("Enemy golpeó al Player");
+            }
         }
     }
 }

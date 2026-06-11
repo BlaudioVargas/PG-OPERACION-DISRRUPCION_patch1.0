@@ -4,47 +4,78 @@ using UnityEngine;
 
 public class hitboxplayer : MonoBehaviour
 {
-    // este metodo se ejecuta cuando el hitbox entra en contacto
-    // con otro collider marcado como trigger
     private void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log("Golpe detectado con: " + other.name);
+
         // =========================
         // ENEMIGOS NORMALES
         // =========================
-        if(other.CompareTag("Enemy"))
+        if (other.CompareTag("Enemy"))
         {
-            other.GetComponent<Enemy>().TomarDano(5);
+            Enemy enemy = other.GetComponentInParent<Enemy>();
+
+            if (enemy != null)
+            {
+                enemy.TomarDano(5);
+                Debug.Log("Daño aplicado a Enemy");
+            }
         }
 
         // =========================
         // SUBJEFES
         // =========================
-        else if(other.CompareTag("Subjefe"))
+        else if (other.CompareTag("Subjefe"))
         {
-            other.GetComponent<subjefe>().TomarDano(20);
+            subjefe boss = other.GetComponentInParent<subjefe>();
+
+            if (boss != null)
+            {
+                boss.TomarDano(20);
+            }
         }
 
-        else if(other.CompareTag("Subjefe 2"))
+        else if (other.CompareTag("Subjefe 2"))
         {
-            other.GetComponent<subjefe2>().TomarDano(20);
+            subjefe2 boss = other.GetComponentInParent<subjefe2>();
+
+            if (boss != null)
+            {
+                boss.TomarDano(20);
+            }
         }
 
-        else if(other.CompareTag("Subjefe 3"))
+        else if (other.CompareTag("Subjefe 3"))
         {
-            other.GetComponent<subjefe3>().TomarDano(20);
+            subjefe3 boss = other.GetComponentInParent<subjefe3>();
+
+            if (boss != null)
+            {
+                boss.TomarDano(20);
+            }
         }
 
-        else if(other.CompareTag("Subjefe 4"))
+        else if (other.CompareTag("Subjefe 4"))
         {
-            other.GetComponent<subjefe4>().TomarDano(20);
+            subjefe4 boss = other.GetComponentInParent<subjefe4>();
+
+            if (boss != null)
+            {
+                boss.TomarDano(20);
+            }
         }
 
         // =========================
         // JEFE FINAL
         // =========================
-        else if(other.CompareTag("Final Boss"))
+        else if (other.CompareTag("Final Boss"))
         {
-            other.GetComponent<finalboss>().TomarDano(25);
+            finalboss boss = other.GetComponentInParent<finalboss>();
+
+            if (boss != null)
+            {
+                boss.TomarDano(25);
+            }
         }
     }
 }
